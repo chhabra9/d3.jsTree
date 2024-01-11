@@ -17,6 +17,17 @@
     stroke: steelblue;
     stroke-width: 1px;
 }
-body{
+.tooltip {
+  position: absolute;
+  background-color: #ccc;
+  color: #fff;
+  padding: 5px;
+  border-radius: 3px;
+  font-size: 12px;
+ visibility: hidden;
+  transition: visibility 0.3s ease;
+}
+#graph{
+  background-color: rgb(8, 7, 6);
   overflow: hidden;
 }

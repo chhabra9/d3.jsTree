@@ -11,20 +11,13 @@ $(document).ready(()=>{
             url: 'data.json',
             datatype: 'json',
             success: (data) => {
-
-                data.treeData[0].startPoint = dim.height / 2;
                 createTree(data.treeData[0]);
-    
             }
         });
         console.log(data)
     }
 })
 })
-let dim = {
-        height:800,
-        width: window.screen.width ,
-    }
     let margin = {
         top: 30,
         bottom: 30,
@@ -46,11 +39,13 @@ let dim = {
             url: 'data.json',
             datatype: 'json',
             success: (data) => {
-                data.treeData[0].startPoint = dim.height / 2;
                 createTree(data.treeData[0]);
     
             }
         });
+    }
+    function changeSize(){
+        console.log("---working---")
     }
     function getMaxDepthIterative(root) {
         const stack = [{ node: root, depth: 0 }];
@@ -72,18 +67,50 @@ let dim = {
 
         return maxDepth;
     }
+    function countLeafNodes(tree) {
+        if (!tree) {
+          return 0;
+        }
+      
+        let leafNodeCount = 0;
+        const stack = [tree];
+      
+        while (stack.length > 0) {
+          const node = stack.pop();
+      
+          if (!node.children || node.children.length === 0) {
+            // Node is a leaf node
+            leafNodeCount++;
+          } else {
+            // Node has children, add them to the stack for further processing
+            stack.push(...node.children);
+          }
+        }
+      
+        return leafNodeCount;
+      }
     let svg;
     let i = 0;
-    createTree = (data) => {
-       let depth=  getMaxDepthIterative(data)*25
+        createTree = (data)=>{
+        let isDownstream =true;
+        let dim = {
+            height:800,
+            width:window.screen.width ,
+        }
+        let depth=  getMaxDepthIterative(data)
+        let leafNodeCount = countLeafNodes(data)
+        dim.height =(leafNodeCount*25)
+        data.startPoint = dim.height / 2;
        let tree = d3.layout.tree().nodeSize([20, 30]).size([
             dim.height - margin.top - margin.bottom, dim.width - margin.left - margin.right
         ]);
-
+        if (isDownstream) {
+            tree = tree.sort((a, b) => a.x - b.x);
+        }
         let nodes = tree.nodes(data).reverse();
         let links = tree.links(nodes);
         let diagonal = d3.svg.diagonal().projection((d) => [d.y, d.x]);
-        nodes.forEach((d) => d.y = d.depth * 110);
+        nodes.forEach((d) => (d.y = isDownstream ? (depth - d.depth) * 175 : d.depth * 50 * depth));
         let zoom = d3.behavior.zoom().scaleExtent([0.5,20]).on("zoom", zoomed)
         zoomRange.addEventListener("input", function() {
             const scale = +this.value;
@@ -91,24 +118,29 @@ let dim = {
             "translate(" + 0 + ")"
             + " scale(" +scale + ")");
           });
-          d3.select("body svg").remove();
+          d3.select("#graph svg").remove();
 
-         svg = d3.select("body").
+         svg = d3.select("#graph").
             append("svg").
             attr("width", dim.width).
             attr("height", dim.height).
             call(zoom).
             append("g").
             attr("transform", `translate(${margin.left},${margin.right})`);
-            d3.select("#zoom_in").on("click", function() {
+
+            d3.select("#zoomRange").on("change", function(value) {
+                console.log("hello world",value)
                 zoom.scaleBy(svg.transition().duration(750), 1.2);
               });
               d3.select("#zoom_out").on("click", function() {
+                console.log("hey ther")
                 zoom.scaleBy(svg.transition().duration(750), 0.8);
               });
 
         let nodeData = svg.selectAll("g.node").data(nodes, (d) => d.id || (d.id = ++i));
         nodeData.exit().remove();
+        let tooltip = d3.select("body").append("div")
+        .attr("class", "tooltip");
         var nodeEnter = nodeData.enter().append("g")
             .attr("class", "node")
             .attr("transform", (d) => `translate(0,${data.startPoint})`)
@@ -119,11 +151,22 @@ let dim = {
                 let selectedNode = d3.selectAll("circle").filter(p => p.id === d.id);
                 selectedNode.classed("hoverCircleNodeClass", false)
                 selectedNode.style("fill", (d) => d.color).style("stroke-width", 0);
+                console.log(this)
+                tooltip.style("visibility", "visible")
+            })
+            .on("mousemove", (d) => {
+                tooltip
+                .html("The exact value of<br>this cell is:888")
+                .style("left", (d3.event.pageX+10) + "px")
+                .style("top", (d3.event.pageY-10) + "px")
+                .style("visibility", "visible")
             })
             .on("mouseout", (d) => {
                 let selectedNode = d3.selectAll("circle").filter(p => p.id === d.id);
                 selectedNode.style("fill", null).style("stroke-width", "3px");
                 selectedNode.classed("hoverCircleNodeClass", true);
+                tooltip.transition()
+                    .style("visibility", "hidden");
             });
 
         nodeEnter.
@@ -135,6 +178,7 @@ let dim = {
             attr("y", fontPos.y).
             attr("text-anchor", "end")
             .text((d) => d.name)
+            .style("color","#ccc")
             .style("fill-opacity", 1e-6);
 
         let nodeUpdate = nodeData.
@@ -186,7 +230,7 @@ let dim = {
                 url: 'http://localhost:3000/abc',
                 datatype: 'json',
                 success: (response) => {
-                    console.log("calling")
+                    console.log("calling",response)
                     d.children = response.children
                     updateTree(data);
                 }
@@ -195,16 +239,25 @@ let dim = {
     }
 
     function updateTree(data) {
-        console.log(data)
+        let isDownstream = true;
+        let dim = {
+            height:800,
+            width: window.screen.width ,
+        }
+        let depth=  getMaxDepthIterative(data)
+        let leafNodeCount = countLeafNodes(data)
+        dim.height =(leafNodeCount*25)
         let tree = d3.layout.tree().nodeSize([20, 30]).size([
             dim.height - margin.top - margin.bottom, dim.width - margin.left - margin.right
         ]);
-
+        if (isDownstream) {
+            tree = tree.sort((a, b) => a.x - b.x);
+        }
         let nodes = tree.nodes(data).reverse();
         let links = tree.links(nodes);
         let diagonal = d3.svg.diagonal().projection((d) => [d.y, d.x]);
-        let depth=  getMaxDepthIterative(data)*25
-        nodes.forEach((d) => d.y = d.depth * 110);
+
+        nodes.forEach((d) => (d.y = isDownstream ? (depth - d.depth) * 175 : d.depth * 50 * depth));
 
         let svg = d3.select("body svg g");
 
@@ -213,20 +266,34 @@ let dim = {
 
         // Remove any exiting nodes
         nodeData.exit().remove();
-
+        d3.selectAll(".tooltip").remove();
+          let tooltip = d3.select("body").append("div")
+        .attr("class", "tooltip");
         let nodeEnter = nodeData.enter().append("g")
             .attr("class", "node")
             .attr("transform", (d) => `translate(${d.y},${d.x})`)
             .on("click", (d) => click(d, data))
             .on("mouseover", (d) => {
+                // console.log("----",tooltip)
                 let selectedNode = d3.selectAll("circle").filter(p => p.id === d.id);
                 selectedNode.classed("hoverCircleNodeClass", false)
                 selectedNode.style("fill", (d) => d.color).style("stroke-width", 0);
+                console.log(this)
+                tooltip.style("visibility", "visible")
+            })
+            .on("mousemove", (d) => {
+                tooltip
+                .html("The exact value of<br>this cell is:888")
+                .style("left", (d3.event.pageX+10) + "px")
+                .style("top", (d3.event.pageY-10) + "px")
+                .style("visibility", "visible")
             })
             .on("mouseout", (d) => {
                 let selectedNode = d3.selectAll("circle").filter(p => p.id === d.id);
                 selectedNode.style("fill", null).style("stroke-width", "3px");
                 selectedNode.classed("hoverCircleNodeClass", true);
+                tooltip.transition()
+                    .style("visibility", "hidden");
             });
 
         nodeEnter.append("circle")
@@ -276,7 +343,6 @@ let dim = {
     }
 
     function zoomed() {
-        console.log("calling")
         svg.attr("transform", "translate(" + d3.event.translate + ")");
       }
 

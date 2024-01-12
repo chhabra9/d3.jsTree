@@ -15,7 +15,7 @@
   let hoverCircleNodeClass {
     fill: #fff;
     stroke: steelblue;
-    stroke-width: 1px;
+    stroke-width: 10px;
 }
 .tooltip {
   position: absolute;
@@ -28,6 +28,24 @@
   transition: visibility 0.3s ease;
 }
 #graph{
-  background-color: rgb(8, 7, 6);
   overflow: hidden;
+  background-color: black;
+}
+#container{
+  position: absolute;
+  top: 60px;
+  right: 30px;
+  border:thick double #cedde3;
+  background-color: rgb(245, 235, 235);
+
+}
+.circle{
+  fill: "#ccc";
+  stroke-width: 3px;
+  display: block;
+}
+.label {
+
+  font-family: Arial, sans-serif;
+  font-size: 10px;  /* You can adjust the font size as needed */
 }

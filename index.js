@@ -1,5 +1,35 @@
 $(document).ready(()=>{
-    console.log("working")
+    const container = d3.select("#container");
+    const board = container.append("svg")
+        .attr("width",350)
+        .attr("height",150);
+    
+        board.selectAll("circle")
+        .data(circlesData)
+        .enter()
+        .append("circle")
+        .attr("cx", 50) // Adjust the spacing between circles
+        .attr("cy", (d,i)=> 20+i*40)
+        .attr("r", d => d.radius)
+        .attr("class", "circle")
+        .style("fill", "#fff")
+        .style("stroke", (d)=>{
+            return d.color;
+        })
+        .style("stroke-width", "3px");
+        
+ board.selectAll("text")
+        .data(circlesData).enter().
+        append("text").attr("x",80).
+        attr("y",(d,i)=>{return 25+i*40})
+        .attr("text-anchor", "front")
+        .attr("alignment-baseline","front")
+        .text((d) => d.label)
+        .style("color","#fff")
+            .style("fill-opacity", 1);
+
+
+    
  $.ajax({
     url:'http://localhost:3000',
     dataType:'json',
@@ -18,6 +48,13 @@ $(document).ready(()=>{
     }
 })
 })
+
+const circlesData = [
+    { radius: 8, label: "Circle 1 represents something",color:"blue" },
+    { radius: 8, label: "Circle 2 represents something else",color:"green" },
+    { radius: 8, label: "Circle 3 represents another thing",color:"red" }, 
+];
+
     let margin = {
         top: 30,
         bottom: 30,
@@ -92,7 +129,8 @@ $(document).ready(()=>{
     let svg;
     let i = 0;
         createTree = (data)=>{
-        let isDownstream =true;
+
+        let isDownstream = false;
         let dim = {
             height:800,
             width:window.screen.width ,
@@ -110,7 +148,7 @@ $(document).ready(()=>{
         let nodes = tree.nodes(data).reverse();
         let links = tree.links(nodes);
         let diagonal = d3.svg.diagonal().projection((d) => [d.y, d.x]);
-        nodes.forEach((d) => (d.y = isDownstream ? (depth - d.depth) * 175 : d.depth * 50 * depth));
+        nodes.forEach((d) => (d.y = isDownstream ? (depth - d.depth) * 175 : d.depth * 25 * depth));
         let zoom = d3.behavior.zoom().scaleExtent([0.5,20]).on("zoom", zoomed)
         zoomRange.addEventListener("input", function() {
             const scale = +this.value;
@@ -147,6 +185,7 @@ $(document).ready(()=>{
             .on("click", (d) => {
                 click(d, data);
             })
+
             .on("mouseover", (d) => {
                 let selectedNode = d3.selectAll("circle").filter(p => p.id === d.id);
                 selectedNode.classed("hoverCircleNodeClass", false)
@@ -164,22 +203,24 @@ $(document).ready(()=>{
             .on("mouseout", (d) => {
                 let selectedNode = d3.selectAll("circle").filter(p => p.id === d.id);
                 selectedNode.style("fill", null).style("stroke-width", "3px");
-                selectedNode.classed("hoverCircleNodeClass", true);
+                // selectedNode.classed("hoverCircleNodeClass", true);
                 tooltip.transition()
                     .style("visibility", "hidden");
             });
 
         nodeEnter.
             append("circle").
-            attr("r", (d) => { return d.depth == 0 ? 1e-1 : 1e-4 });
+            attr("r", (d) => { return d.depth == 0 ? 1e-1 : 1e-4 })
+            .style("stroke", (d) => "grey")
+            ;
 
-        nodeEnter.append("text").
-            attr("x", fontPos.x).
-            attr("y", fontPos.y).
-            attr("text-anchor", "end")
-            .text((d) => d.name)
-            .style("color","#ccc")
-            .style("fill-opacity", 1e-6);
+        // nodeEnter.append("text").
+        //     attr("x", fontPos.x).
+        //     attr("y", fontPos.y).
+        //     attr("text-anchor", "end")
+        //     .text((d) => d.name)
+        //     .style("color","#ccc")
+        //     .style("fill-opacity", 1e-6);
 
         let nodeUpdate = nodeData.
             transition().
@@ -188,11 +229,11 @@ $(document).ready(()=>{
 
         nodeUpdate.select("circle")
             .attr("r", (d) => {
-                return d.depth === 0 ? 50 : 8;
+                return 8
             });
 
-        nodeUpdate.select("text")
-            .style("fill-opacity", 1);
+        // nodeUpdate.select("text")
+        //     .style("fill-opacity", 1);
 
         // Remove any existing nodes
             nodeData.exit().remove();
@@ -239,7 +280,7 @@ $(document).ready(()=>{
     }
 
     function updateTree(data) {
-        let isDownstream = true;
+        let isDownstream = false;
         let dim = {
             height:800,
             width: window.screen.width ,
@@ -297,16 +338,19 @@ $(document).ready(()=>{
             });
 
         nodeEnter.append("circle")
-            .attr("r", (d) => d.depth === 0 ? 50 : 8);
+            .attr("r", (d) => d.depth === 0 ? 50 : 8)
+            .style("stroke",(d)=>{
+                return "grey"
+            });
 
-        nodeEnter.append("text")
-            .attr("x", fontPos.x)
-            .attr("y", fontPos.y)
-            .attr("text-anchor", "end")
-            .text((d) => {
-                return(d.name)
-            })
-            .style("fill-opacity", 1e-6);
+        // nodeEnter.append("text")
+        //     .attr("x", fontPos.x)
+        //     .attr("y", fontPos.y)
+        //     .attr("text-anchor", "end")
+        //     .text((d) => {
+        //         return(d.name)
+        //     })
+        //     .style("fill-opacity", 1e-6);
         let nodeUpdate = nodeData.
             transition().
             duration(duration).
@@ -320,8 +364,8 @@ $(document).ready(()=>{
         nodeUpdate.select("circle")
             .attr("r", (d) => d.depth === 0 ? 50 : 8);
 
-        nodeUpdate.select("text")
-            .style("fill-opacity", 1);
+        // nodeUpdate.select("text")
+        //     .style("fill-opacity", 1);
 
         // // Update existing links
         let link = svg.selectAll("path.link").data(links, (d) => d.target.id);

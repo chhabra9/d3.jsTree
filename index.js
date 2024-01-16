@@ -67,8 +67,8 @@ const circlesData = [
         "stroke-width": "1px",
     }
     let fontPos = {
-        x: .35,
-        y: 13
+        x: 13,
+        y: .35
     }
     let duration = 800
     function Call(){
@@ -80,6 +80,15 @@ const circlesData = [
     
             }
         });
+    }
+    let checkboxStatus = {
+        checkbox1: false,
+        checkbox2: false,
+        checkbox3: false
+    }
+    function handleCheckboxChange(id) {
+        checkboxStatus[id] = !checkboxStatus[id]
+        console.log('-----',checkboxStatus)
     }
     function changeSize(){
         console.log("---working---")
@@ -108,7 +117,6 @@ const circlesData = [
         if (!tree) {
           return 0;
         }
-      
         let leafNodeCount = 0;
         const stack = [tree];
       
@@ -178,7 +186,7 @@ const circlesData = [
         let nodeData = svg.selectAll("g.node").data(nodes, (d) => d.id || (d.id = ++i));
         nodeData.exit().remove();
         let tooltip = d3.select("body").append("div")
-        .attr("class", "tooltip");
+        .attr("id", "tooltip");
         var nodeEnter = nodeData.enter().append("g")
             .attr("class", "node")
             .attr("transform", (d) => `translate(0,${data.startPoint})`)
@@ -214,13 +222,13 @@ const circlesData = [
             .style("stroke", (d) => "grey")
             ;
 
-        // nodeEnter.append("text").
-        //     attr("x", fontPos.x).
-        //     attr("y", fontPos.y).
-        //     attr("text-anchor", "end")
-        //     .text((d) => d.name)
-        //     .style("color","#ccc")
-        //     .style("fill-opacity", 1e-6);
+        nodeEnter.append("text").
+            attr("x",isDownstream? -fontPos.x:fontPos.x).
+            attr("y", fontPos.y).
+            attr("text-anchor", isDownstream?"end":"start")
+            .text((d) => d.name)
+            .style("color","#ccc")
+            .style("fill-opacity", 1e-6);
 
         let nodeUpdate = nodeData.
             transition().
@@ -232,8 +240,8 @@ const circlesData = [
                 return 8
             });
 
-        // nodeUpdate.select("text")
-        //     .style("fill-opacity", 1);
+        nodeUpdate.select("text")
+            .style("fill-opacity", 1);
 
         // Remove any existing nodes
             nodeData.exit().remove();
@@ -261,11 +269,11 @@ const circlesData = [
         if (d.children) {
             d._children = d.children;
             d.children = null;
-            updateTree(data);
+            updateTree(data,d);
         } else if(d._children){
             d.children = d._children;
             d._children = null;
-            updateTree(data);
+            updateTree(data,d);
         }else{
             $.ajax({
                 url: 'http://localhost:3000/abc',
@@ -273,13 +281,13 @@ const circlesData = [
                 success: (response) => {
                     console.log("calling",response)
                     d.children = response.children
-                    updateTree(data);
+                    updateTree(data,d);
                 }
             });
         }
     }
 
-    function updateTree(data) {
+    function updateTree(data,clickedNode) {
         let isDownstream = false;
         let dim = {
             height:800,
@@ -301,15 +309,12 @@ const circlesData = [
         nodes.forEach((d) => (d.y = isDownstream ? (depth - d.depth) * 175 : d.depth * 50 * depth));
 
         let svg = d3.select("body svg g");
-
-        // Update existing nodes
         let nodeData = svg.selectAll("g.node").data(nodes, (d) => d.id || (d.id = ++i));
 
-        // Remove any exiting nodes
         nodeData.exit().remove();
-        d3.selectAll(".tooltip").remove();
-          let tooltip = d3.select("body").append("div")
-        .attr("class", "tooltip");
+        
+        let tooltip  = d3.select("#tooltip");
+
         let nodeEnter = nodeData.enter().append("g")
             .attr("class", "node")
             .attr("transform", (d) => `translate(${d.y},${d.x})`)
@@ -343,14 +348,14 @@ const circlesData = [
                 return "grey"
             });
 
-        // nodeEnter.append("text")
-        //     .attr("x", fontPos.x)
-        //     .attr("y", fontPos.y)
-        //     .attr("text-anchor", "end")
-        //     .text((d) => {
-        //         return(d.name)
-        //     })
-        //     .style("fill-opacity", 1e-6);
+        nodeEnter.append("text")
+            .attr("x", isDownstream? -fontPos.x:fontPos.x)
+            .attr("y", fontPos.y)
+            .attr("text-anchor", isDownstream? "end": "start")
+            .text((d) => {
+                return(d.name)
+            })
+            .style("fill-opacity", 1e-6);
         let nodeUpdate = nodeData.
             transition().
             duration(duration).
@@ -362,10 +367,10 @@ const circlesData = [
             });
 
         nodeUpdate.select("circle")
-            .attr("r", (d) => d.depth === 0 ? 50 : 8);
+            .attr("r", 8);
 
-        // nodeUpdate.select("text")
-        //     .style("fill-opacity", 1);
+        nodeUpdate.select("text")
+            .style("fill-opacity", 1);
 
         // // Update existing links
         let link = svg.selectAll("path.link").data(links, (d) => d.target.id);
@@ -377,13 +382,13 @@ const circlesData = [
             .attr("class", "link")
             .attr("d", function (d) {
                 console.log("---",d)
-                let o = { x: d.x, y: d.y};
+                let o = { x: d.x , y: d.y};
                 return diagonal({ source: o, target: o });
             });
-
-        link.transition()
+            link.transition()
             .duration(duration)
             .attr("d", diagonal);
+
     }
 
     function zoomed() {

@@ -17,7 +17,7 @@
     stroke: steelblue;
     stroke-width: 10px;
 }
-.tooltip {
+#tooltip {
   position: absolute;
   background-color: #ccc;
   color: #fff;
@@ -29,9 +29,10 @@
 }
 #graph{
   overflow: hidden;
-  background-color: black;
+  /* background-color: black; */
 }
 #container{
+  display: flex;
   position: absolute;
   top: 60px;
   right: 30px;
